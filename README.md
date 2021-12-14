@@ -1,10 +1,10 @@
 # gatoclient-lite
-This is designed to be a patch to gatoclient to make it as optimized as possible, while removing some features and making the client more barebones.
+This is designed to be a patch to gatoclient to make it as optimized and fast as possible, while removing some features and making the client more barebones.
 - Improved launch sequence and splash screen
-- Removed RPC, badges, and some other features
-- Removed autoupdate
-- Improved performance
+- Removed RPC, badges, autoupdate, and some other features
+- Improved performance by removing several features using setInterval
 - Fixed ghost processes upon closing
+- Fixed broken swapper and CSS
 
 # How to install
 1. Get the latest release of gatoclient: https://github.com/Gatohost/gatoclient/releases
