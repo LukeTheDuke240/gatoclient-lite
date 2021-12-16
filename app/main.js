@@ -6,9 +6,9 @@ const { app, ipcMain, BrowserWindow, protocol, dialog } = electron;
 require('v8-compile-cache');
 
 // Gato/creepycats - Gatoclient
-// Mixaz - IDKR source code (Used once or twice)
+// Mixaz - IDKR source code (used so many fucking times)
 // ando - Billboards, modding, etc
-// Giant - JANREX client (very nice source code, helped me make some stuff)
+// Giant - JANREX client
 // LukeTheDuke - Gatoclient-lite
 
 var swapperFolder = path.join(app.getPath("documents"), "GatoclientLite/swapper");
@@ -61,49 +61,55 @@ ipcMain.on('splashNeedInfo', (event) => {
     splashWindow.webContents.send('splashInfo', app.getVersion());
 });
 
-// Long thing of command lines to disable anything unrequired
+/*app.commandLine.appendSwitch("enable-accelerated-2d-canvas");
+app.commandLine.appendSwitch("enable-features=useskiarenderer");
+app.commandLine.appendSwitch("disable-oop-rasterization");
+app.commandLine.appendSwitch("enable-gpu-rasterization");*/
+
 if (userPrefs['removeUselessFeatures'] == true) {
-    app.commandLine.appendSwitch("force_high_performance_gpu");
-    app.commandLine.appendSwitch("force-high-performance-gpu");
-    app.commandLine.appendSwitch("disable-breakpad");
-    app.commandLine.appendSwitch("disable-component-update");
+    app.commandLine.appendSwitch("disable-breakpad"); //crash reporting
     app.commandLine.appendSwitch("disable-print-preview");
-    app.commandLine.appendSwitch("disable-metrics");
-    app.commandLine.appendSwitch("disable-metrics-repo");
     app.commandLine.appendSwitch("enable-javascript-harmony");
     app.commandLine.appendSwitch("enable-future-v8-vm-features");
     app.commandLine.appendSwitch("enable-webgl2-compute-context");
-    app.commandLine.appendSwitch("disable-hang-monitor");
-    app.commandLine.appendSwitch("no-referrers");
     app.commandLine.appendSwitch("renderer-process-limit", 100);
     app.commandLine.appendSwitch("max-active-webgl-contexts", 100);
-    app.commandLine.appendSwitch("enable-quic");
-    app.commandLine.appendSwitch("high-dpi-support", 1);
     app.commandLine.appendSwitch("ignore-gpu-blacklist");
     app.commandLine.appendSwitch("disable-2d-canvas-clip-aa");
     app.commandLine.appendSwitch("disable-bundled-ppapi-flash");
     app.commandLine.appendSwitch("disable-logging");
     app.commandLine.appendSwitch("disable-web-security");
     app.commandLine.appendSwitch("webrtc-max-cpu-consumption-percentage=100");
-    console.log('Removed Useless Features');
+    console.log('Enabled Experiments');
 }
 if (userPrefs['fpsUncap'] == true) {
     app.commandLine.appendSwitch('disable-frame-rate-limit');
-    app.commandLine.appendSwitch("disable-gpu-vsync");
+    app.commandLine.appendSwitch('disable-gpu-vsync');
     console.log('Removed FPS Cap');
 }
 if (userPrefs['angle-backend'] != 'default') {
-    app.commandLine.appendSwitch("use-angle", userPrefs['angle-backend']);
-    console.log('Using Angle: ' + userPrefs['angle-backend']);
+    if (userPrefs['angle-backend'] == 'vulkan') {
+        app.commandLine.appendSwitch("use-angle", "vulkan");
+        app.commandLine.appendSwitch("use-vulkan");
+        app.commandLine.appendSwitch("--enable-features=Vulkan");
+
+        console.log("VULKAN INITIALIZED")
+    }
+    else {
+        app.commandLine.appendSwitch("use-angle", userPrefs['angle-backend']);
+
+        console.log('Using Angle: ' + userPrefs['angle-backend']);
+    }
+    
 }
 if (userPrefs['inProcessGPU'] == true) {
     app.commandLine.appendSwitch("in-process-gpu");
     console.log('In Process GPU is active');
 }
-if (userPrefs['disableAccelerated2D'] == true) {
-    app.commandLine.appendSwitch("disable-accelerated-2d-canvas", "true");
-    console.log('Disabled Accelerated 2D canvas');
-}
+/*if (userPrefs['zeroCopy'] == true) {
+    app.commandLine.appendSwitch('enable-zero-copy');
+    console.log('Removed FPS Cap');
+}*/
 
 // Workaround for Electron 8.x
 if (userPrefs['resourceSwapper'] == true) {
@@ -141,6 +147,16 @@ app.on('ready', function () {
     });
 
     splashWindow.once('ready-to-show', () => {
+
+        console.log("GPU INFO BEGIN")
+        app.getGPUInfo('complete').then(completeObj => {
+                console.dir(completeObj);
+        });
+        
+        
+        console.log("GPU FEATURES BEGIN")
+        console.dir(app.getGPUFeatureStatus());
+
         splashWindow.removeMenu();
         splashWindow.show();
         launchGame();
@@ -163,10 +179,7 @@ app.on('ready', function () {
         show: false,
         width: 1600,
         height: 900,
-        center: true,
-        webPreferences: {
-            preload: path.join(__dirname, '/socialPreload.js')
-        }
+        center: true
     });
     socialWindow.removeMenu();
 
@@ -237,7 +250,6 @@ app.on('ready', function () {
         // I hope this fixes the bug with the shitty Amazon Ad
         event.preventDefault();
         if (url.includes('https://krunker.io/social.html')) {
-            console.log('Opening Social Page');
             socialWindow.loadURL(url);
             socialWindow.show();
         }
@@ -247,13 +259,22 @@ app.on('ready', function () {
     });
 
     // Handle Social Page Switching
+
     socialWindow.webContents.on("new-window", (event, url) => {
-        event.preventDefault();
-        urlToOpen = url;
-        if (url.includes('https://krunker.io/social.html')) {
+       event.preventDefault();
+       urlToOpen = url;
+       if (url.includes('https://krunker.io/social.html')) {
             socialWindow.loadURL(urlToOpen);
-        }
+       }
     });
+
+    socialWindow.on("close", (event) => {
+       event.preventDefault();
+       console.log("SOCIAL CLOSED")
+       socialWindow.loadURL("about:blank");
+       socialWindow.hide();
+    });
+    
 
     mainWindow.on('close', function () { //nice memory leak lmao
         app.exit();
