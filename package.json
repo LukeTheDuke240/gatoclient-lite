@@ -1,6 +1,6 @@
 {
   "name": "GatoClient-lite",
-  "version": "1.4.2-p",
+  "version": "1.4.2-p1",
   "description": "A modification of Gatoclient, built for speed and performance above all else.",
   "main": "./app/main.js",
   "author": "creepycatsTTV & LukeTheDuke",
